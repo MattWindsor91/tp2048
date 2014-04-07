@@ -5,22 +5,34 @@ A clone/imitation of the game 2048 (http://git.io/2048) in everyone's favourite 
 
 For those of you whose state-of-the-art 486es can't quite handle the Web 2.0 glory of today's sliding tile puzzles.
 
+tp2048 also works in Free Pascal, to an extent (there are some bugs).
+
 Requirements
 ------------
+
+### Turbo Pascal
 
 * Turbo Pascal, v5.5 or compatible
 * MS-DOS, tested in v7 (Windows 95) but likely works with FreeDOS or crustier DOS
 * A computer (pretty much any IBM PC-compatible with colour graphics should do)
 * Masochism
 
-Tested on MS-DOS 7 and Windows 95 on an Intel Pentium 2 233MHz processor and VGA graphics.
+Tested, and initially written, on MS-DOS 7 and Windows 95 on an Intel Pentium 2 233MHz processor and VGA graphics.
+
+### Free Pascal
+
+* Free Pascal
+* Any computer that can run Free Pascal (possibly)
+
+Tested with Free Pascal Compiler 2.6.2-5 on Ubuntu 13.10 x64.  (It mostly works!)
+
 
 Instructions
 ------------
 
-1. Getst thou a Turbo Pascal.  I used version 5.5, which is legally available free of charge from Borland/Embarcadero.
+1. Getst thou a Turbo Pascal.  I used version 5.5, which is legally available free of charge from Borland/Embarcadero.  Free Pascal also works, ish.
 2. Getst thou the source code.
-3. Compilest thou thy downloaded source code with thy acquired Turbo Pascal.
+3. Compilest thou thy downloaded source code with thy acquired Pascal compiler.
 4. Enjoyeth.
 
 Questions and Answers
@@ -64,8 +76,12 @@ It's somewhat likely that, in the circuitous route from my P2 over floppy disket
 
 ### Does this work in development environments that aren't obsolete?
 
-Who knows?
+I managed to compile and run it with Free Pascal on a modern Ubuntu distribution, and it mostly worked, so maybe?
 
 ### Your Pascal sucks!  Why are you so lame?
 
 Probably because this is the first thing I've ever written in Pascal.  I somewhat avoided it until now. =P
+
+### It looks weird when compiled in Free Pascal!
+
+I'll look into it at some point.  This is probably due to differences between Turbo Pascal's Crt unit, and Free Pascal's emulation of it.
