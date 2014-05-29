@@ -203,30 +203,36 @@ begin
     TextBackground(Stages[S].Background);
 end;
 
+{ Draw a single cell of a tile's background. }
+procedure DrawTileCell(LeftX, Col: ScreenX; TopY, Row: ScreenY);
+var
+    IsVerticalEdge, IsHorizontalEdge: Boolean;
+begin
+    GotoXY(LeftX + (Col - 1), TopY + (Row - 1));
+
+    IsVerticalEdge   := Col in [1, GridTileWidth];
+    IsHorizontalEdge := Row in [1, GridTileHeight];
+
+    if IsVerticalEdge and IsHorizontalEdge then Write('+')
+    else if IsVerticalEdge then Write('-')
+    else if IsHorizontalEdge then Write('-')
+    else Write(' ')
+end;
+
+{ Draw a single column of a tile's background. }
+procedure DrawTileColumn(LeftX, Col: ScreenX; TopY: ScreenY);
+var
+    Row: ScreenY;
+begin
+    for Row := 1 to GridTileHeight do DrawTileCell(LeftX, Col, TopY, Row);
+end;
+
 { Draw a tile's background at the given screen X and Y. }
 procedure DrawTileBackground(LeftX: ScreenX; TopY: ScreenY);
 var
-    X: ScreenX;
-    Y: ScreenY;
-
-    IsVerticalEdge: Boolean;
-    IsHorizontalEdge: Boolean;
+    Col: ScreenX;
 begin
-    for X := 1 to GridTileWidth do
-    begin
-        for Y := 1 to GridTileHeight do
-        begin
-            GotoXY(LeftX + (X - 1), TopY + (Y - 1));
-
-            IsVerticalEdge   := X in [1, GridTileWidth];
-            IsHorizontalEdge := Y in [1, GridTileHeight];
-
-            if IsVerticalEdge and IsHorizontalEdge then Write('+')
-            else if IsVerticalEdge then Write('-')
-            else if IsHorizontalEdge then Write('-')
-            else Write(' ')
-        end;
-    end;
+    for Col := 1 to GridTileWidth do DrawTileColumn(LeftX, Col, TopY);
     ParkCursor;
 end;
 
