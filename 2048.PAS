@@ -18,11 +18,15 @@ type
 
     Stage = 0..11; { Tile stage; 0 is the absence of a tile. }
 
+    { Possible lock states of a tile. }
+    Lock = (Unlocked, Locked);
+
     { Grid co-ordinates, measured in tiles.
       If you change these, change GridWidth and GridHeight too. }
     GridX = 1..4; { Grid X co-ordinate. 1 is the leftmost row. }
     GridY = 1..4; { Grid Y co-ordinate. 1 is the topmost column. }
     GridM = array [GridX, GridY] of Stage;
+    GridL = array [GridX, GridY] of Lock;
 
     { Screen co-ordinates, measured in characters. }
     ScreenX = 1..80; { Screen X co-ordinate. 1 is the leftmost row. }
@@ -178,6 +182,7 @@ const
 var
     State : GameState; { The current game state. }
     Grid  : GridM;     { The board representation. }
+    Locks : GridL;     { Current tile locking. }
     Score : Integer;   { The game store. }
 
 {
@@ -425,13 +430,53 @@ begin
     end;
 end;
 
+{ Checks to see if two tiles on the grid are equal. }
+function TilesEqual(X1: GridX; Y1: GridY; X2: GridX; Y2: GridY) : Boolean;
+begin
+  TilesEqual := Grid[X1, Y1] = Grid[X2, Y2];
+end;
+
+{ Checks to see if a tile on the grid is unlocked (can be merged). }
+function TileUnlocked(X: GridX; Y: GridY) : Boolean;
+begin
+  TileUnlocked := Locks[X, Y] = Unlocked;
+end;
+
+{ Locks a tile. }
+procedure LockTile(X: GridX; Y: GridY);
+begin
+  Locks[X, Y] := Locked;
+end;
+
+{ Unlocks a tile. }
+procedure UnlockTile(X: GridX; Y: GridY);
+begin
+  Locks[X, Y] := Unlocked;
+end;
+
+{ Unlocks all tiles. }
+procedure UnlockTiles;
+var
+    X: GridX;
+    Y: GridY;
+begin
+  for X := 1 to GridWidth do for Y := 1 to GridHeight do UnlockTile(X, Y);
+end;
+
 { Checks a possible tile merge to see if it is valid. }
 function CanMergeTile(X: GridX; Y: GridY; DX: Integer; DY: Integer) : Boolean;
+var
+    DestX: GridX;
+    DestY: GridY;
 begin
     CanMergeTile := False;
     if InBounds(X, Y, DX, DY) and (Grid[X, Y] <> 0) then
     begin
-        CanMergeTile := Grid[X + DX, Y + DY] = Grid[X, Y];
+        DestX := X + DX;
+        DestY := Y + DY;
+
+        CanMergeTile := TileUnlocked(DestX, DestY)
+                        and TilesEqual(X, Y, DestX, DestY)
     end;
 end;
 
@@ -460,6 +505,8 @@ begin
 
     PlaceTile(X + DX, Y + DY, NewStage);
     PlaceTile(X     , Y     , 0       );
+
+    LockTile(X + DX, Y + DY);
 end;
 
 { Moves the tile in the given direction until it can move no longer.
@@ -676,6 +723,8 @@ begin
         77: Moved := MoveRight;
         80: Moved := MoveDown;
     end;
+
+    UnlockTiles;
 
     HandleKey := Moved and not GameOver
 end;
