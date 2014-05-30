@@ -8,6 +8,7 @@ type
     KeyMapping = (NoKey, QuitKey, UpKey, DownKey, LeftKey, RightKey);
 
 function GetKey : KeyMapping;
+procedure PauseUntilKey;
 
 procedure InitialiseKeyMaps;
 
@@ -26,6 +27,12 @@ begin
     OKey := Ord(ReadKey);
     if OKey = 0 then GetKey := SpecialKeyMap[Ord(ReadKey)]
                 else GetKey := NormalKeyMap[OKey];
+end;
+
+{ Pauses until a key is pressed. }
+procedure PauseUntilKey;
+begin
+    ReadKey;
 end;
 
 { Initialises the keymaps. }
