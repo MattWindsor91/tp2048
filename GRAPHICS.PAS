@@ -61,9 +61,9 @@ end;
 { Prepares for a status message. }
 procedure PrepareStatusLine;
 begin
-    GotoXY(1, StatusY);
+    Window(1, StatusY, ScreenW, StatusY);
     StatusColours;
-    ClrEOL;
+    ClrScr;
 end;
 
 { Resets the window to cover the entire screen. }
@@ -225,6 +225,7 @@ begin
     TextBackground(ScreenBG);
     ClrScr;
     DrawGrid;
+    CursorOff;
 end;
 
 { Cleans up the (lack of) graphics. }
