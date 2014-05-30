@@ -2,47 +2,9 @@
 - Licenced under the MIT licence.
 }
 program TP2048;
-uses AddTile, Graphics, Grid, Keymap, Motion, Stages, State;
+uses AddTile, Graphics, Grid, Keymap, Messages, Motion, Stages, State;
 
-
-{
-- Constants
-}
-
-const
-    { Status messages to display when the game ends, for each final state. }
-    GameOverMessages : array[GameState] of String
-    = ( { InProgress } 'BUG: Game ended while still in progress!'
-      , { Won        } 'Congraturation! You have played a great game.'
-      , { Lost       } 'Game over, man, game over.'
-      , { Quit       } 'Be seeing you...'
-      );
-
-
-{ Draw a status line message. }
-procedure StatusMessage(Message: String);
-begin
-    PrepareStatusLine;
-    Write('Score: ', CurrentScore, '. ', Message);
-    FinishGraphicsOperation;
-end;
-
-{
-- Score
-}
-
-{ Announces the score via the status line. }
-procedure AnnounceScore;
-begin
-    StatusMessage('');
-end;
-
-
-{
-- Main logic
-}
-
-{ Handles a keypress. }
+{ Waits for, and handles, a keypress. }
 function HandleKey : Boolean;
 var
     Moved : Boolean;
@@ -114,7 +76,6 @@ end;
 procedure Initialise;
 begin
     Randomize;
-
     ZeroGrid;
     AddInitialTiles;
 
@@ -122,13 +83,13 @@ begin
     InitialiseState;
     InitialiseGraphics;
 
-    StatusMessage('This is a fake/derivative and not the original 2048.');
+    SayHi;
 end;
 
 { Displays a game over message and waits to end the game. }
 procedure PostGame;
 begin
-    StatusMessage(GameOverMessages[CurrentState]);
+    SayBye;
     PauseUntilKey;
 
     CleanupGraphics;
