@@ -684,20 +684,25 @@ begin
     NormalKeyMap[{ Esc } 27] := QuitKey;
 end;
 
+{ Gets a keypress and returns its mapping. }
+function GetKey : KeyMapping;
+var
+    OKey : Byte;
+begin
+    OKey := Ord(ReadKey);
+    if OKey = 0 then GetKey := SpecialKeyMap[Ord(ReadKey)]
+                else GetKey := NormalKeyMap[OKey];
+end;
+
+
 { Handles a keypress. }
-function HandleKey(Key: Char) : Boolean;
+function HandleKey : Boolean;
 var
     Moved : Boolean;
-    OKey  : Byte;
-    MKey  : KeyMapping;
 begin
     Moved := False;
 
-    OKey := Ord(Key);
-    if OKey = 0 then MKey := SpecialKeyMap[Ord(ReadKey)]
-                else MKey := NormalKeyMap[OKey];
-
-    case MKey of
+    case GetKey of
         QuitKey  : State := Quit;
         UpKey    : Moved := MoveUp;
         LeftKey  : Moved := MoveLeft;
@@ -713,7 +718,7 @@ procedure LoopStep;
 var
     Stepped : Boolean;
 begin
-    Stepped := HandleKey(ReadKey);
+    Stepped := HandleKey;
     if Stepped then AddRandomTile;
     UnlockTiles;
 end;
