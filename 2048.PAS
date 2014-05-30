@@ -2,35 +2,16 @@
 - Licenced under the MIT licence.
 }
 program TP2048;
-uses Crt, Grid, Keymap;
+uses Crt, Grid, Keymap, Motion, Stages, State;
 
 {
 - Types
 }
 
 type
-    { Percentage weighting, used for deciding which tile to select. }
-    Percentage = 0..100;
-
-    { The possible states the game can take. }
-    GameState = (InProgress, Won, Lost, Quit);
-
     { Screen co-ordinates, measured in characters. }
     ScreenX = 1..80; { Screen X co-ordinate. 1 is the leftmost row. }
     ScreenY = 1..25; { Screen Y co-ordinate. 1 is the topmost column. }
-
-    { Specifiers of tile 'stages' (the various values of tiles).
-      This includes the name to use when labeling tiles, the score value of
-      the tile, the percentage probability it will be chosen when adding a
-      tile (all of these must sum to 100!), and the foreground and background
-      colours. }
-    StageSpec = record
-        Name            : String;
-        Score           : Integer;
-        PlacePercentage : Percentage;
-        Foreground      : Byte;
-        Background      : Byte;
-    end;
 
 {
 - Constants
@@ -48,86 +29,6 @@ const
     { Number of tiles to place initially.
       Must be between 1 and GridX*GridY. }
     NumInitialTiles : Integer = 2;
-
-    { If at least one tile of this stage is placed, the game is won. }
-    LastStage : Stage = 11 { 2048 };
-
-    { The stages available.  If adding or removing, change Stage and EndStage
-      too.  The first stage is special as it represents an empty tile. }
-    Stages: array[Stage] of StageSpec
-    = ( ( Name            : ''
-        ; Score           : 0
-        ; PlacePercentage : 0
-        ; Foreground      : Black
-        ; Background      : Blue
-        )
-      , ( Name            : '2'
-        ; Score           : 2
-        ; PlacePercentage : 80
-        ; Foreground      : Black
-        ; Background      : LightGray
-        )
-      , ( Name            : '4'
-        ; Score           : 4
-        ; PlacePercentage : 20
-        ; Foreground      : Black
-        ; Background      : Cyan
-        )
-      , ( Name            : '8'
-        ; Score           : 8
-        ; PlacePercentage : 0
-        ; Foreground      : DarkGray
-        ; Background      : Cyan
-        )
-      , ( Name            : '16'
-        ; Score           : 16
-        ; PlacePercentage : 0
-        ; Foreground      : DarkGray
-        ; Background      : Green
-        )
-      , ( Name            : '32'
-        ; Score           : 32
-        ; PlacePercentage : 0
-        ; Foreground      : DarkGray
-        ; Background      : Red
-        )
-      , ( Name            : '64'
-        ; Score           : 64
-        ; PlacePercentage : 0
-        ; Foreground      : LightGray
-        ; Background      : Red
-        )
-      , ( Name            : '128'
-        ; Score           : 128
-        ; PlacePercentage : 0
-        ; Foreground      : LightGray
-        ; Background      : Magenta
-        )
-      , ( Name            : '256'
-        ; Score           : 256
-        ; PlacePercentage : 0
-        ; Foreground      : LightCyan
-        ; Background      : Magenta
-        )
-      , ( Name            : '512'
-        ; Score           : 512
-        ; PlacePercentage : 0
-        ; Foreground      : Yellow
-        ; Background      : Magenta
-        )
-      , ( Name            : '1024'
-        ; Score           : 1024
-        ; PlacePercentage : 0
-        ; Foreground      : White
-        ; Background      : Magenta
-        )
-      , ( Name            : '2048'
-        ; Score           : 2048
-        ; PlacePercentage : 0
-        ; Foreground      : White
-        ; Background      : Black
-        )
-      );
 
     {
     - Graphics
@@ -155,14 +56,6 @@ const
 
     { Screen mode.  Change ScreenX and ScreenY if you change this. }
     ScreenMode : Byte = CO80;
-
-{
-- Global Variables
-}
-
-var
-    State : GameState; { The current game state. }
-    Score : Integer;   { The game store. }
 
 {
 - Graphics Routines
@@ -197,8 +90,8 @@ end;
 { Changes the current text colours to those of the given stage. }
 procedure UseStageColour(S: Stage);
 begin
-    TextColor(Stages[S].Foreground);
-    TextBackground(Stages[S].Background);
+    TextColor(StageSpecs[S].Foreground);
+    TextBackground(StageSpecs[S].Background);
 end;
 
 { Puts a string at a given (X, Y) co-ordinate. }
@@ -268,7 +161,7 @@ end;
 procedure DrawTileLabel(S: Stage);
 begin
     GotoXY(TileLabelX, TileLabelY);
-    Write(Stages[S].Name);
+    Write(StageSpecs[S].Name);
 end;
 
 { Sets the current window to point to a tile at grid location (X, Y). }
@@ -325,7 +218,7 @@ begin
     GotoXY(1, StatusY);
     StatusColours;
     ClrEOL;
-    Write('Score: ', Score, '. ', Message);
+    Write('Score: ', CurrentScore, '. ', Message);
     ParkCursor;
 end;
 
@@ -357,200 +250,6 @@ begin
     StatusMessage('');
 end;
 
-{ Adds to the score. }
-procedure AddScore(DScore: Integer);
-begin
-    Score := Score + DScore;
-    AnnounceScore;
-end;
-
-{
-- Tile movement
-}
-
-{ Checks to see if a move will place a tile out of bounds. }
-function InBounds(X: GridX; Y: GridY; DX: Integer; DY: Integer) : Boolean;
-var
-    InXBounds : Boolean;
-    InYBounds : Boolean;
-begin
-    InXBounds := (X + DX) in [1.. GridWidth];
-    InYBounds := (Y + DY) in [1..GridHeight];
-    InBounds  := InXBounds and InYBounds;
-end;
-
-{ Checks a possible tile move to see if it is valid. }
-function CanMoveTile(X: GridX; Y: GridY; DX: Integer; DY: Integer) : Boolean;
-begin
-    CanMoveTile := False;
-    if InBounds(X, Y, DX, DY) and HasTileAt(X, Y) then
-    begin
-        CanMoveTile := not (HasTileAt(X + DX, Y + DY));
-    end;
-end;
-
-{ Checks a possible tile merge to see if it is valid. }
-function CanMergeTile(X: GridX; Y: GridY; DX: Integer; DY: Integer) : Boolean;
-var
-    DestX: GridX;
-    DestY: GridY;
-begin
-    CanMergeTile := False;
-    if InBounds(X, Y, DX, DY) and (HasTileAt(X, Y)) then
-    begin
-        DestX := X + DX;
-        DestY := Y + DY;
-
-        CanMergeTile := TileUnlocked(DestX, DestY)
-                        and TilesEqual(X, Y, DestX, DestY)
-    end;
-end;
-
-{ Moves the tile (X, Y) to an empty space DX rightwards and DY down, replacing
-  the original tile with T.
-  The move must have already been checked for validity. }
-procedure MoveAndReplaceTile(X: GridX; Y: GridY; DX, DY: Integer; T: Stage);
-begin
-    PlaceTile(X + DX, Y + DY, T);
-    DrawTile(X + DX, Y + DY, T);
-
-    PlaceTile(X, Y, 0);
-    DrawTile(X, Y, 0);
-end;
-
-{ Moves the tile (X, Y) to an empty space DX rightwards and DY down.
-  The move must have already been checked for validity. }
-procedure MoveTile(X: GridX; Y: GridY; DX, DY: Integer);
-begin
-    MoveAndReplaceTile(X, Y, DX, DY, TileAt(X, Y));
-end;
-
-{ Merges the tile (X, Y) with an identical tile DX rightwards and DY down.
-  The move must have already been checked for validity.
-  As this can cause the game to be won, we check for that here.
-}
-procedure MergeTile(X: GridX; Y: GridY; DX, DY: Integer);
-var
-    NewStage : Stage;
-begin
-    NewStage := Succ(TileAt(X, Y));
-
-    { Was the game just won? }
-    if NewStage = LastStage then State := Won;
-
-    AddScore(Stages[NewStage].Score);
-
-    MoveAndReplaceTile(X, Y, DX, DY, NewStage);
-    LockTile(X + DX, Y + DY);
-end;
-
-{ Moves the tile in the given direction until it can move no longer.
-  Returns True if the tile is not empty and has moved successfully. }
-function MoveAcross(X: GridX; Y: GridY; DX: Integer; DY: Integer) : Boolean;
-var
-    TX : Integer;
-    TY : Integer;
-begin
-    TX := X;
-    TY := Y;
-    MoveAcross := False;
-
-    while CanMoveTile(TX, TY, DX, DY) do
-    begin
-        MoveTile(TX, TY, DX, DY);
-        TX := TX + DX;
-        TY := TY + DY;
-        MoveAcross := True;
-    end;
-    if CanMergeTile(TX, TY, DX, DY) then
-    begin
-        MergeTile(TX, TY, DX, DY);
-        MoveAcross := True;
-    end;
-end;
-
-{
-- Grid movement
-}
-
-{ Moves the grid up and returns True if the move succeeded. }
-function MoveUp : Boolean;
-var
-    X: GridX;
-    Y: GridY;
-begin
-    MoveUp := False;
-
-    for X := 1 to GridWidth do
-    begin
-        for Y := 2 to GridHeight do
-        begin
-            if MoveAcross(X, Y, 0, -1) then MoveUp := True;
-        end;
-    end;
-end;
-
-{ Moves the grid left and returns True if the move succeeded. }
-function MoveLeft : Boolean;
-var
-    X: GridX;
-    Y: GridY;
-begin
-    MoveLeft := False;
-
-    for Y := 1 to GridHeight do
-    begin
-        for X := 2 to GridWidth do
-        begin
-            if MoveAcross(X, Y, -1, 0) then MoveLeft := True;
-        end;
-    end;
-end;
-
-{ Moves the grid right. }
-function MoveRight : Boolean;
-var
-    X: GridX;
-    Y: GridY;
-begin
-    MoveRight := False;
-
-    for Y := 1 to GridHeight do
-    begin
-        for X := GridWidth - 1 downto 1 do
-        begin
-            if MoveAcross(X, Y, 1, 0) then MoveRight := True;
-        end;
-    end;
-end;
-
-{ Moves the grid down. }
-function MoveDown : Boolean;
-var
-    X: GridX;
-    Y: GridY;
-begin
-    MoveDown := False;
-
-    for X := 1 to GridWidth do
-    begin
-        for Y := GridHeight - 1 downto 1 do
-        begin
-            if MoveAcross(X, Y, 0, 1) then MoveDown := True;
-        end;
-    end;
-end;
-
-{
-- Game state checking and manipulation
-}
-
-{ Returns True if the game is over. }
-function GameOver : Boolean;
-begin
-    GameOver := State <> InProgress;
-end;
-
 { Checks to see if any moves are possible on the board. }
 function OutOfMoves : Boolean;
 var
@@ -574,7 +273,7 @@ end;
   If it is, the game state is changed accordingly. }
 procedure CheckGameLost;
 begin
-    if OutOfMoves then State := Lost;
+    if OutOfMoves then LoseGame;
 end;
 
 {
@@ -597,7 +296,6 @@ begin
         begin
             Placed := True;
             PlaceTile(X, Y, S);
-            DrawTile(X, Y, S);
         end;
     end;
 end;
@@ -615,7 +313,7 @@ begin
 
     while (Cumulative < RandomPercent) do
     begin
-        Cumulative  := Cumulative + Stages[ChosenStage].PlacePercentage;
+        Cumulative  := Cumulative + StageSpecs[ChosenStage].PlacePercentage;
         ChosenStage := ChosenStage + 1;
     end;
 
@@ -650,7 +348,7 @@ begin
     Moved := False;
 
     case GetKey of
-        QuitKey  : State := Quit;
+        QuitKey  : QuitGame;
         UpKey    : Moved := MoveUp;
         LeftKey  : Moved := MoveLeft;
         RightKey : Moved := MoveRight;
@@ -665,9 +363,13 @@ procedure LoopStep;
 var
     Stepped : Boolean;
 begin
+    DrawGrid;
+
     Stepped := HandleKey;
     if Stepped then AddRandomTile;
+
     UnlockTiles;
+    AnnounceScore;
 end;
 
 { The main game loop. }
@@ -682,8 +384,7 @@ begin
     InitialiseKeyMaps;
     Randomize;
 
-    Score := 0;
-    State := InProgress;
+    InitialiseState;
 
     ZeroGrid;
 
@@ -696,7 +397,7 @@ end;
 { Displays a game over message and waits to end the game. }
 procedure PostGame;
 begin
-    StatusMessage(GameOverMessages[State]);
+    StatusMessage(GameOverMessages[CurrentState]);
     ReadKey;
 
     CleanupGraphics;

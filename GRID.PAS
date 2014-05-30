@@ -3,9 +3,9 @@
 unit Grid;
 interface
 
-type
-    Stage = 0..11; { Tile stage; 0 is the absence of a tile. }
+uses Stages;
 
+type
     { Grid co-ordinates, measured in tiles.
       If you change these, change GridWidth and GridHeight too. }
     GridX = 1..4; { Grid X co-ordinate. 1 is the leftmost row. }
@@ -37,25 +37,25 @@ type
     LockGrid  = array [GridX, GridY] of Lock;  { Lock matrix. }
 
 var
-    Stages : StageGrid; { The board representation. }
-    Locks  : LockGrid;  { The locking status of each tile on the grid. }
+    Tiles : StageGrid; { The board representation. }
+    Locks : LockGrid;  { The locking status of each tile on the grid. }
 
 { Gets the tile at (X, Y). }
 function TileAt(X: GridX; Y: GridY) : Stage;
 begin
-    TileAt := Stages[X, Y];
+    TileAt := Tiles[X, Y];
 end;
 
 { Is there a tile at (X, Y)? }
 function HasTileAt(X: GridX; Y: GridY) : Boolean;
 begin
-    HasTileAt := Stages[X, Y] <> 0;
+    HasTileAt := Tiles[X, Y] <> 0;
 end;
 
 { Checks to see if two tiles on the grid are equal. }
 function TilesEqual(X1: GridX; Y1: GridY; X2: GridX; Y2: GridY) : Boolean;
 begin
-    TilesEqual := Stages[X1, Y1] = Stages[X2, Y2];
+    TilesEqual := Tiles[X1, Y1] = Tiles[X2, Y2];
 end;
 
 { Checks to see if a tile on the grid is unlocked (can be merged). }
@@ -67,7 +67,7 @@ end;
 { Place a tile on the grid with the given co-ordinates and stage. }
 procedure PlaceTile(X: GridX; Y: GridY; S: Stage);
 begin
-    Stages[X, Y] := S;
+    Tiles[X, Y] := S;
 end;
 
 { Locks a tile. }
@@ -97,7 +97,7 @@ var
     X: GridX;
     Y: GridY;
 begin
-    for X := 1 to GridWidth do for Y:= 1 to GridHeight do Stages[X, Y] := 0;
+    for X := 1 to GridWidth do for Y:= 1 to GridHeight do Tiles[X, Y] := 0;
 end;
 
 end.
