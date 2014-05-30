@@ -191,7 +191,9 @@ begin
     Window(Left, Top, Right, Bottom);
 end;
 
-{ Draw a tile at position (X, Y) on the grid. }
+{ Draw a tile at position (X, Y) on the grid.
+  This changes the current window, but does not change it back.
+  Use FinishGraphicsOperation afterwards to do so. }
 procedure DrawTile(X: GridX; Y: GridY; S: Stage);
 begin
     TileWindow(X, Y);
@@ -200,9 +202,6 @@ begin
     ClrScr;
     DrawTileFrame;
     DrawTileLabel(S);
-
-    ResetWindow;
-    ParkCursor;
 end;
 
 { Draw the current grid. }
@@ -215,6 +214,8 @@ begin
     begin
         for Y := 1 to GridHeight do DrawTile(X, Y, TileAt(X, Y));
     end;
+
+    FinishGraphicsOperation;
 end;
 
 { Initialises the (lack of) graphics. }
@@ -224,7 +225,6 @@ begin
     TextBackground(ScreenBG);
     ClrScr;
     DrawGrid;
-    FinishGraphicsOperation;
 end;
 
 { Cleans up the (lack of) graphics. }
