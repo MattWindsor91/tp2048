@@ -220,9 +220,9 @@ begin
     IsHorizontalEdge := Row in [1, GridTileHeight];
 
     if IsVerticalEdge and IsHorizontalEdge then Write('+')
-    else if IsVerticalEdge then Write('-')
+    else if IsVerticalEdge then Write('|')
     else if IsHorizontalEdge then Write('-')
-    else Write(' ')
+    { else Write(' ') }
 end;
 
 { Draw a single column of a tile's background. }
@@ -233,12 +233,63 @@ begin
     for Row := 1 to GridTileHeight do DrawTileCell(Col, Row);
 end;
 
-{ Draw a tile's background at the given screen X and Y. }
-procedure DrawTileBackground;
-var
-    Col: ScreenX;
+procedure PutXY(X: ScreenX; Y: ScreenY; Data: String);
 begin
-    for Col := 1 to GridTileWidth do DrawTileColumn(Col);
+    GotoXY(X, Y);
+    Write(Data);
+end;
+
+{ Changes the current window's boundaries by the given deltas. }
+procedure ResizeWindow(DLeft, DTop, DRight, DBottom: Integer);
+var
+    Left, Top, Right, Bottom: Integer;
+begin
+    Left   := WindMinX + DLeft;
+    Top    := WindMinY + DTop;
+    Right  := WindMaxX + DRight;
+    Bottom := WindMaxY + DBottom;
+
+    Window(Left, Top, Right, Bottom);
+end;
+
+procedure DrawTileCorners;
+begin
+    { Trying to PutXY at the bottom-right corner causes scrolling, so we
+      briefly enlarge the window. }
+    ResizeWindow(0, 0, 1, 1);
+
+    WriteLn(WindMinX, WindMinY, WindMaxX, WindMaxY);
+
+    PutXY(            1,              1, '+');
+    PutXY(            1, GridTileHeight, '+');
+    PutXY(GridTileWidth,              1, '+');
+    PutXY(GridTileWidth, GridTileHeight, '+');
+
+    ResizeWindow(0, 0, -1, -1);
+end;
+
+procedure DrawTileHorizontalEdge(Y: ScreenY);
+var
+    X: ScreenY;
+begin
+    for X := 2 to GridTileWidth - 1 do PutXY(X, Y, '-');
+end;
+
+procedure DrawTileVerticalEdge(X: ScreenX);
+var
+    Y: ScreenY;
+begin
+    for Y := 2 to GridTileHeight - 1 do PutXY(X, Y, '|');
+end;
+
+{ Draw a tile's background at the given screen X and Y. }
+procedure DrawTileFrame;
+begin
+    DrawTileCorners;
+    DrawTileVerticalEdge(1);
+    DrawTileVerticalEdge(GridTileWidth);
+    DrawTileHorizontalEdge(1);
+    DrawTileHorizontalEdge(GridTileHeight);
 end;
 
 { Draw a label for a tile starting at the given screen X and Y. }
@@ -258,7 +309,7 @@ begin
     Right  := Left + GridTileWidth - 1;
 
     Top    := ScreenYOfGridY(Y);
-    Bottom := Right + GridTileHeight - 1;
+    Bottom := Top + GridTileHeight - 1;
 
     Window(Left, Top, Right, Bottom);
 end;
@@ -266,11 +317,13 @@ end;
 { Draw a tile at position (X, Y) on the grid. }
 procedure DrawTile(X: GridX; Y: GridY; S: Stage);
 begin
-    UseStageColour(S);
-
     TileWindow(X, Y);
-    DrawTileBackground;
+
+    UseStageColour(S);
+    ClrScr;
+    DrawTileFrame;
     DrawTileLabel(S);
+
     ResetWindow;
     ParkCursor;
 end;
