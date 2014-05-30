@@ -705,15 +705,13 @@ end;
 
 { Displays a game over message and waits to end the game. }
 procedure PostGame;
-var
-    Key: Char;
 begin
     case State of
         Lost : StatusMessage('Game over!');
         Won  : StatusMessage('Congraturation! You have played a good game.');
         Quit : StatusMessage('Enjoy DOS!');
     end;
-    Key := ReadKey;
+    ReadKey;
 
     CleanupGraphics;
 end;
