@@ -46,6 +46,14 @@ type
 }
 
 const
+    { Status messages to display when the game ends, for each final state. }
+    GameOverMessages : array[GameState] of String
+    = ( { InProgress } 'BUG: Game ended while still in progress!'
+      , { Won        } 'Congraturation! You have played a great game.'
+      , { Lost       } 'Game over, man, game over.'
+      , { Quit       } 'Be seeing you...'
+      );
+
     { Number of tiles to place initially.
       Must be between 1 and GridX*GridY. }
     NumInitialTiles : Integer = 2;
@@ -706,11 +714,7 @@ end;
 { Displays a game over message and waits to end the game. }
 procedure PostGame;
 begin
-    case State of
-        Lost : StatusMessage('Game over!');
-        Won  : StatusMessage('Congraturation! You have played a good game.');
-        Quit : StatusMessage('Enjoy DOS!');
-    end;
+    StatusMessage(GameOverMessages[State]);
     ReadKey;
 
     CleanupGraphics;
