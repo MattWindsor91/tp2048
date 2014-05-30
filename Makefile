@@ -1,11 +1,11 @@
 SRC=		2048.PAS
+UNITS=		GRID.PAS
 BIN=		2048
 COMPILER=	fpc
 CFLAGS=		-Mtp
 
-${BIN}: ${SRC}
+${BIN}: ${SRC} ${UNITS}
 	${COMPILER} ${CFLAGS} ${SRC}
 
 clean:
-	rm ${BIN}
-	rm ${BIN}.o
+	rm -f ${BIN} *.o *.ppu *.tpu
