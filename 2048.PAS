@@ -10,6 +10,10 @@ uses
 }
 
 type
+    { Key-map enumeration. }
+    KeyMapping = (NoKey, QuitKey, UpKey, DownKey, LeftKey, RightKey);
+    KeyMap     = array [Byte] of KeyMapping;
+
     { Percentage weighting, used for deciding which tile to select. }
     Percentage = 0..100;
 
@@ -184,6 +188,8 @@ var
     Grid  : GridM;     { The board representation. }
     Locks : GridL;     { Current tile locking. }
     Score : Integer;   { The game store. }
+
+    NormalKeyMap, SpecialKeyMap : KeyMap;
 
 {
 - Graphics Routines
@@ -712,25 +718,60 @@ end;
 - Main logic
 }
 
+{ Initialises the keymaps. }
+procedure InitialiseKeyMaps;
+var
+    I: Integer;
+begin
+    for I := 0 to 255 do
+    begin
+      NormalKeyMap[I]  := NoKey;
+      SpecialKeyMap[I] := NoKey;
+    end;
+
+    { WASD keys }
+    NormalKeyMap[Ord('w')] := UpKey;
+    NormalKeyMap[Ord('a')] := LeftKey;
+    NormalKeyMap[Ord('s')] := DownKey;
+    NormalKeyMap[Ord('d')] := RightKey;
+
+    { vi keys }
+    NormalKeyMap[Ord('h')] := LeftKey;
+    NormalKeyMap[Ord('j')] := DownKey;
+    NormalKeyMap[Ord('k')] := UpKey;
+    NormalKeyMap[Ord('l')] := RightKey;
+
+    { Arrow keys }
+    SpecialKeyMap[{ Up arrow }    72] := UpKey;
+    SpecialKeyMap[{ Left arrow }  75] := LeftKey;
+    SpecialKeyMap[{ Right arrow } 77] := RightKey;
+    SpecialKeyMap[{ Down arrow }  80] := DownKey;
+
+    { Exiting }
+    NormalKeyMap[Ord('q')]   := QuitKey;
+    NormalKeyMap[{ Esc } 27] := QuitKey;
+end;
+
 { Handles a keypress. }
 function HandleKey(Key: Char) : Boolean;
 var
     Moved : Boolean;
+    OKey  : Byte;
+    MKey  : KeyMapping;
 begin
     Moved := False;
 
-    case Ord(Key) of
-        { Enter, q: exit game. }
-        113, 27: State := Quit;
+    OKey := Ord(Key);
+    if OKey = 0 then MKey := SpecialKeyMap[Ord(ReadKey)]
+                else MKey := NormalKeyMap[OKey];
 
-        { Arrow keys: move tiles. }
-        72: Moved := MoveUp;
-        75: Moved := MoveLeft;
-        77: Moved := MoveRight;
-        80: Moved := MoveDown;
+    case MKey of
+        QuitKey  : State := Quit;
+        UpKey    : Moved := MoveUp;
+        LeftKey  : Moved := MoveLeft;
+        RightKey : Moved := MoveRight;
+        DownKey  : Moved := MoveDown;
     end;
-
-    UnlockTiles;
 
     HandleKey := Moved and not GameOver
 end;
@@ -742,6 +783,7 @@ var
 begin
     Stepped := HandleKey(ReadKey);
     if Stepped then AddRandomTile;
+    UnlockTiles;
 end;
 
 { The main game loop. }
@@ -753,6 +795,7 @@ end;
 { Initialises the game state. }
 procedure Initialise;
 begin
+    InitialiseKeyMaps;
     Randomize;
 
     Score := 0;
