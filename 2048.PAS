@@ -153,9 +153,9 @@ const
     GridTileWidth  : ScreenX = 10;
     GridTileHeight : ScreenY = 6;
 
-    { Offset co-ordinates for tile levels, measured from the top-left. }
-    LabelOffsetX : ScreenX = 1;
-    LabelOffsetY : ScreenY = 1;
+    { Co-ordinates for tile labels, measured from the top-left of the tile. }
+    TileLabelX : ScreenX = 2;
+    TileLabelY : ScreenY = 2;
 
     { Position of the status line.  This should not overlap the grid. }
     StatusY : ScreenY = 25;
@@ -175,6 +175,12 @@ var
 {
 - Graphics Routines
 }
+
+{ Resets the window to cover the entire screen. }
+procedure ResetWindow;
+begin
+    Window(1, 1, 80, 25);
+end;
 
 { Parks the cursor in an inoffensive location. }
 procedure ParkCursor;
@@ -204,11 +210,11 @@ begin
 end;
 
 { Draw a single cell of a tile's background. }
-procedure DrawTileCell(LeftX, Col: ScreenX; TopY, Row: ScreenY);
+procedure DrawTileCell(Col: ScreenX; Row: ScreenY);
 var
     IsVerticalEdge, IsHorizontalEdge: Boolean;
 begin
-    GotoXY(LeftX + (Col - 1), TopY + (Row - 1));
+    GotoXY(Col, Row);
 
     IsVerticalEdge   := Col in [1, GridTileWidth];
     IsHorizontalEdge := Row in [1, GridTileHeight];
@@ -220,43 +226,53 @@ begin
 end;
 
 { Draw a single column of a tile's background. }
-procedure DrawTileColumn(LeftX, Col: ScreenX; TopY: ScreenY);
+procedure DrawTileColumn(Col: ScreenX);
 var
     Row: ScreenY;
 begin
-    for Row := 1 to GridTileHeight do DrawTileCell(LeftX, Col, TopY, Row);
+    for Row := 1 to GridTileHeight do DrawTileCell(Col, Row);
 end;
 
 { Draw a tile's background at the given screen X and Y. }
-procedure DrawTileBackground(LeftX: ScreenX; TopY: ScreenY);
+procedure DrawTileBackground;
 var
     Col: ScreenX;
 begin
-    for Col := 1 to GridTileWidth do DrawTileColumn(LeftX, Col, TopY);
-    ParkCursor;
+    for Col := 1 to GridTileWidth do DrawTileColumn(Col);
 end;
 
 { Draw a label for a tile starting at the given screen X and Y. }
-procedure DrawTileLabel(X: ScreenX; Y: ScreenY; S: Stage);
+procedure DrawTileLabel(S: Stage);
 begin
-    GotoXY(X + LabelOffsetX, Y + LabelOffsetY);
+    GotoXY(TileLabelX, TileLabelY);
     Write(Stages[S].Name);
-    ParkCursor;
+end;
+
+{ Sets the current window to point to a tile at grid location (X, Y). }
+procedure TileWindow(X: GridX; Y: GridY);
+var
+    Left, Right: ScreenX;
+    Top, Bottom: ScreenY;
+begin
+    Left   := ScreenXOfGridX(X);
+    Right  := Left + GridTileWidth - 1;
+
+    Top    := ScreenYOfGridY(Y);
+    Bottom := Right + GridTileHeight - 1;
+
+    Window(Left, Top, Right, Bottom);
 end;
 
 { Draw a tile at position (X, Y) on the grid. }
 procedure DrawTile(X: GridX; Y: GridY; S: Stage);
-var
-    SX: ScreenX;
-    SY: ScreenY;
 begin
     UseStageColour(S);
 
-    SX := ScreenXOfGridX(X);
-    SY := ScreenYOfGridY(Y);
-
-    DrawTileBackground(SX, SY);
-    DrawTileLabel(SX, SY, S);
+    TileWindow(X, Y);
+    DrawTileBackground;
+    DrawTileLabel(S);
+    ResetWindow;
+    ParkCursor;
 end;
 
 { Draw the current grid. }
