@@ -480,19 +480,27 @@ begin
     end;
 end;
 
+{ Moves the tile (X, Y) to an empty space DX rightwards and DY down, replacing
+  the original tile with T.
+  The move must have already been checked for validity. }
+procedure MoveAndReplaceTile(X: GridX; Y: GridY; DX, DY: Integer; T: Stage);
+begin
+    PlaceTile(X + DX, Y + DY, T);
+    PlaceTile(X     , Y     , 0);
+end;
+
 { Moves the tile (X, Y) to an empty space DX rightwards and DY down.
   The move must have already been checked for validity. }
-procedure MoveTile(X: GridX; Y: GridY; DX: Integer; DY: Integer);
+procedure MoveTile(X: GridX; Y: GridY; DX, DY: Integer);
 begin
-    PlaceTile(X + DX, Y + DY, Grid[X, Y]);
-    PlaceTile(X     , Y     , 0         );
+    MoveAndReplaceTile(X, Y, DX, DY, Grid[X, Y]);
 end;
 
 { Merges the tile (X, Y) with an identical tile DX rightwards and DY down.
   The move must have already been checked for validity.
   As this can cause the game to be won, we check for that here.
 }
-procedure MergeTile(X: GridX; Y: GridY; DX: Integer; DY: Integer);
+procedure MergeTile(X: GridX; Y: GridY; DX, DY: Integer);
 var
     NewStage : Stage;
 begin
@@ -503,9 +511,7 @@ begin
 
     AddScore(Stages[NewStage].Score);
 
-    PlaceTile(X + DX, Y + DY, NewStage);
-    PlaceTile(X     , Y     , 0       );
-
+    MoveAndReplaceTile(X, Y, DX, DY, NewStage);
     LockTile(X + DX, Y + DY);
 end;
 
