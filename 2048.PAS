@@ -2,19 +2,13 @@
 - Licenced under the MIT licence.
 }
 program TP2048;
-uses
-    Crt,
-    Grid;
+uses Crt, Grid, Keymap;
 
 {
 - Types
 }
 
 type
-    { Key-map enumeration. }
-    KeyMapping = (NoKey, QuitKey, UpKey, DownKey, LeftKey, RightKey);
-    KeyMap     = array [Byte] of KeyMapping;
-
     { Percentage weighting, used for deciding which tile to select. }
     Percentage = 0..100;
 
@@ -169,8 +163,6 @@ const
 var
     State : GameState; { The current game state. }
     Score : Integer;   { The game store. }
-
-    NormalKeyMap, SpecialKeyMap : KeyMap;
 
 {
 - Graphics Routines
@@ -649,51 +641,6 @@ end;
 {
 - Main logic
 }
-
-{ Initialises the keymaps. }
-procedure InitialiseKeyMaps;
-var
-    I: Integer;
-begin
-    for I := 0 to 255 do
-    begin
-      NormalKeyMap[I]  := NoKey;
-      SpecialKeyMap[I] := NoKey;
-    end;
-
-    { WASD keys }
-    NormalKeyMap[Ord('w')] := UpKey;
-    NormalKeyMap[Ord('a')] := LeftKey;
-    NormalKeyMap[Ord('s')] := DownKey;
-    NormalKeyMap[Ord('d')] := RightKey;
-
-    { vi keys }
-    NormalKeyMap[Ord('h')] := LeftKey;
-    NormalKeyMap[Ord('j')] := DownKey;
-    NormalKeyMap[Ord('k')] := UpKey;
-    NormalKeyMap[Ord('l')] := RightKey;
-
-    { Arrow keys }
-    SpecialKeyMap[{ Up arrow }    72] := UpKey;
-    SpecialKeyMap[{ Left arrow }  75] := LeftKey;
-    SpecialKeyMap[{ Right arrow } 77] := RightKey;
-    SpecialKeyMap[{ Down arrow }  80] := DownKey;
-
-    { Exiting }
-    NormalKeyMap[Ord('q')]   := QuitKey;
-    NormalKeyMap[{ Esc } 27] := QuitKey;
-end;
-
-{ Gets a keypress and returns its mapping. }
-function GetKey : KeyMapping;
-var
-    OKey : Byte;
-begin
-    OKey := Ord(ReadKey);
-    if OKey = 0 then GetKey := SpecialKeyMap[Ord(ReadKey)]
-                else GetKey := NormalKeyMap[OKey];
-end;
-
 
 { Handles a keypress. }
 function HandleKey : Boolean;
