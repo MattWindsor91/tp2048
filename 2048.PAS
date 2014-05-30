@@ -209,30 +209,7 @@ begin
     TextBackground(Stages[S].Background);
 end;
 
-{ Draw a single cell of a tile's background. }
-procedure DrawTileCell(Col: ScreenX; Row: ScreenY);
-var
-    IsVerticalEdge, IsHorizontalEdge: Boolean;
-begin
-    GotoXY(Col, Row);
-
-    IsVerticalEdge   := Col in [1, GridTileWidth];
-    IsHorizontalEdge := Row in [1, GridTileHeight];
-
-    if IsVerticalEdge and IsHorizontalEdge then Write('+')
-    else if IsVerticalEdge then Write('|')
-    else if IsHorizontalEdge then Write('-')
-    { else Write(' ') }
-end;
-
-{ Draw a single column of a tile's background. }
-procedure DrawTileColumn(Col: ScreenX);
-var
-    Row: ScreenY;
-begin
-    for Row := 1 to GridTileHeight do DrawTileCell(Col, Row);
-end;
-
+{ Puts a string at a given (X, Y) co-ordinate. }
 procedure PutXY(X: ScreenX; Y: ScreenY; Data: String);
 begin
     GotoXY(X, Y);
@@ -252,6 +229,7 @@ begin
     Window(Left, Top, Right, Bottom);
 end;
 
+{ Draws the four corners of a tile. }
 procedure DrawTileCorners;
 begin
     { Trying to PutXY at the bottom-right corner causes scrolling, so we
@@ -268,6 +246,7 @@ begin
     ResizeWindow(0, 0, -1, -1);
 end;
 
+{ Draws a horizontal edge of a tile. }
 procedure DrawTileHorizontalEdge(Y: ScreenY);
 var
     X: ScreenY;
@@ -275,6 +254,7 @@ begin
     for X := 2 to GridTileWidth - 1 do PutXY(X, Y, '-');
 end;
 
+{ Draws a vertical edge of a tile. }
 procedure DrawTileVerticalEdge(X: ScreenX);
 var
     Y: ScreenY;
@@ -282,7 +262,7 @@ begin
     for Y := 2 to GridTileHeight - 1 do PutXY(X, Y, '|');
 end;
 
-{ Draw a tile's background at the given screen X and Y. }
+{ Draw a tile's frame (corners and edges). }
 procedure DrawTileFrame;
 begin
     DrawTileCorners;
@@ -365,6 +345,14 @@ begin
     ClrScr;
     DrawGrid;
     ParkCursor;
+end;
+
+{ Cleans up the (lack of) graphics. }
+procedure CleanupGraphics;
+begin
+    ResetWindow;
+    NormVideo;
+    ClrScr;
 end;
 
 {
@@ -726,6 +714,8 @@ begin
         Quit : StatusMessage('Enjoy DOS!');
     end;
     Key := ReadKey;
+
+    CleanupGraphics;
 end;
 
 { And now, the main procedure. }
